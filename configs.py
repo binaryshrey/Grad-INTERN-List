@@ -1,6 +1,7 @@
-import os, resend, base64
+import os, resend, base64, hashlib
 from dotenv import load_dotenv
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
+from apify_client import ApifyClient
 
 
 load_dotenv()
@@ -18,19 +19,55 @@ RESEND_APIKEY = env_get("RESEND_APIKEY")
 EMAILS = env_get("EMAILS")
 APIFY_TOKEN = env_get("APIFY_TOKEN")
 APIFY_ACTOR_ID = env_get("APIFY_ACTOR_ID")
+REDIS_URL = env_get("REDIS_URL")
 
 resend.api_key = RESEND_APIKEY
+
+
 
 
 # Utility function to convert UNIX timestamp to datetime
 def timestamp_to_datetime(ts: int) -> datetime:
     return datetime.fromtimestamp(ts, tz=timezone.utc)
+
+
+
+
+# --- Helper to hash jobs so we can detect new ones ---
+def hash_job(job: dict) -> str:
+    title = job.get('Title') or job.get('title', '')
+    company = job.get('Company Name') or job.get('companyName', '')
+    url = job.get('Job Url') or job.get('jobUrl', '')
+    key_fields = f"{title}-{company}-{url}"
+    return hashlib.sha256(key_fields.encode()).hexdigest()
+
+
+
+
+def fetch_apify_jobs(title="summer 2026 intern", location="United States", rows=150):
+    client = ApifyClient(APIFY_TOKEN)
+    run_input = {
+        "title": title,
+        "location": location,
+        "publishedAt": "r86400",  # past 24 hours
+        "rows": rows,
+        "proxy": {
+            "useApifyProxy": True,
+            "apifyProxyGroups": ["RESIDENTIAL"],
+        },
+    }
+
+    run = client.actor(APIFY_ACTOR_ID).call(run_input=run_input)
+    items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+    return items
     
+
+
 
 def format_jobs_html_table(jobs):
     """Generate an HTML table from a list of job dicts"""
     if not jobs:
-        return "<p>No new internships in the last 30 minutes.</p>"
+        return "<p>No new internships from Simpllify in the last 60 minutes.</p>"
 
     html = """
     <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif;">
@@ -74,6 +111,8 @@ def format_jobs_html_table(jobs):
 
     html += "</tbody></table>"
     return html
+
+
 
 
 def sendEmailAlert(recent_jobs, attachment=None, attachment_name="linkedin_jobs_24h.xlsx"):
