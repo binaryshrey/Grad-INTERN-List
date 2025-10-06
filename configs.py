@@ -1,4 +1,4 @@
-import os, resend
+import os, resend, base64
 from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
 
@@ -16,6 +16,8 @@ def env_get(env_var: str) -> str:
 LISTINGS_URL = env_get("LISTINGS_URL")
 RESEND_APIKEY = env_get("RESEND_APIKEY")
 EMAILS = env_get("EMAILS")
+APIFY_TOKEN = env_get("APIFY_TOKEN")
+APIFY_ACTOR_ID = env_get("APIFY_ACTOR_ID")
 
 resend.api_key = RESEND_APIKEY
 
@@ -23,7 +25,7 @@ resend.api_key = RESEND_APIKEY
 # Utility function to convert UNIX timestamp to datetime
 def timestamp_to_datetime(ts: int) -> datetime:
     return datetime.fromtimestamp(ts, tz=timezone.utc)
-
+    
 
 def format_jobs_html_table(jobs):
     """Generate an HTML table from a list of job dicts"""
@@ -74,18 +76,26 @@ def format_jobs_html_table(jobs):
     return html
 
 
-def sendEmailAlert(recent_jobs):
+def sendEmailAlert(recent_jobs, attachment=None, attachment_name="linkedin_jobs_24h.xlsx"):
     html_content = format_jobs_html_table(recent_jobs)
 
-    r = resend.Emails.send({
+    email_data = {
         "from": "alerts@resend.dev",
         "to": EMAILS,
         "subject": f"⭐️ Grad INTERN List : {len(recent_jobs)} New Internship(s) Posted ⭐️",
         "html": html_content
-    })
+    }
 
+    if attachment:
+        encoded_attachment = base64.b64encode(attachment.getvalue()).decode("utf-8")
+        email_data["attachments"] = [
+            {
+                "content": encoded_attachment,
+                "filename": attachment_name,
+                "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }
+        ]
 
-
-
-
-
+    import resend
+    r = resend.Emails.send(email_data)
+    return r
