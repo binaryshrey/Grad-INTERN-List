@@ -17,6 +17,8 @@ EMAILS = env_get("EMAILS")
 APIFY_TOKEN = env_get("APIFY_TOKEN")
 APIFY_ACTOR_ID = env_get("APIFY_ACTOR_ID")
 REDIS_URL = env_get("REDIS_URL")
+GOOGLE_GEMINI_API_KEY = env_get("GOOGLE_GEMINI_API_KEY")
+RESUME_PATH = env_get("RESUME_PATH")
 
 resend.api_key = RESEND_APIKEY
 
