@@ -112,7 +112,7 @@ def generate_html_table(title, jobs, is_linkedin=False):
 
 
 # --- Main background job function ---
-def process_recent_jobs_background(job_id: str, minutes: int = 60):
+def process_recent_jobs_background(job_id: str, minutes: int = 120):
     """Background job that fetches Simplify and LinkedIn jobs, then emails HTML tables."""
     try:
         _set_status(job_id, "started")

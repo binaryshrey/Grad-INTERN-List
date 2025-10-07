@@ -64,7 +64,7 @@ async def health():
 
 
 @app.get("/recent_jobs")
-async def recent_jobs(minutes: int = 60):
+async def recent_jobs(minutes: int = 120):
     """
     Start the long-running job in a background thread.
     Returns a job_id which can be used to check progress/status/result.
