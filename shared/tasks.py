@@ -161,25 +161,28 @@ def process_recent_jobs_background(job_id: str, minutes: int = 120):
         _set_progress(job_id, 25)
 
         # STEP 2 – Apify (LinkedIn)
-        apify_jobs = fetch_apify_jobs()
         apify_norm, apify_new_jobs = [], []
-        for j in apify_jobs:
-            n = {
-                "Title": j.get("title"),
-                "Company Name": j.get("companyName"),
-                "Location": j.get("location"),
-                "Posted time": j.get("postedTime"),
-                "Job Url": j.get("jobUrl"),
-                "Applications count": j.get("applicationsCount"),
-                "Employment type": j.get("contractType"),
-                "Resume Score": 0,
-            }
-            apify_norm.append(n)
-            h = hash_job(n)
-            if not r.exists(h):
-                apify_new_jobs.append(n)
-                r.setex(h, JOB_TTL_SECONDS, n.get("Job Url", ""))
-        logger.info(f"{len(apify_new_jobs)} new LinkedIn jobs found (out of {len(apify_norm)}).")
+        try:
+            apify_jobs = fetch_apify_jobs()
+            for j in apify_jobs:
+                n = {
+                    "Title": j.get("title"),
+                    "Company Name": j.get("companyName"),
+                    "Location": j.get("location"),
+                    "Posted time": j.get("postedTime"),
+                    "Job Url": j.get("jobUrl"),
+                    "Applications count": j.get("applicationsCount"),
+                    "Employment type": j.get("contractType"),
+                    "Resume Score": 0,
+                }
+                apify_norm.append(n)
+                h = hash_job(n)
+                if not r.exists(h):
+                    apify_new_jobs.append(n)
+                    r.setex(h, JOB_TTL_SECONDS, n.get("Job Url", ""))
+            logger.info(f"{len(apify_new_jobs)} new LinkedIn jobs found (out of {len(apify_norm)}).")
+        except Exception as e:
+            logger.warning(f"Failed to fetch Apify jobs: {e}. Continuing with Simplify jobs only.")
         _set_progress(job_id, 75)
 
         # STEP 3 – Resume scoring (only new jobs)
