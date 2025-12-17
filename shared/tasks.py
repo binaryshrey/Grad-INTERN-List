@@ -186,31 +186,31 @@ def process_recent_jobs_background(job_id: str, minutes: int = 120):
         _set_progress(job_id, 75)
 
         # STEP 3 – Resume scoring (only new jobs)
-        if GOOGLE_GEMINI_API_KEY and RESUME_PATH:
-            logger.info("Initializing resume scorer…")
-            initialize_resume_scorer(resume_url=RESUME_PATH)
-            all_jobs = []
-            for j in simplify_new_jobs:
-                if j.get("title") and j.get("company_name"):
-                    all_jobs.append(("simplify", j))
-            for j in apify_new_jobs:
-                if j.get("Title") and j.get("Company Name"):
-                    all_jobs.append(("linkedin", j))
+        # if GOOGLE_GEMINI_API_KEY and RESUME_PATH:
+        #     logger.info("Initializing resume scorer…")
+        #     initialize_resume_scorer(resume_url=RESUME_PATH)
+        #     all_jobs = []
+        #     for j in simplify_new_jobs:
+        #         if j.get("title") and j.get("company_name"):
+        #             all_jobs.append(("simplify", j))
+        #     for j in apify_new_jobs:
+        #         if j.get("Title") and j.get("Company Name"):
+        #             all_jobs.append(("linkedin", j))
 
-            logger.info(f"Scoring {len(all_jobs)} new jobs in parallel…")
-            with ThreadPoolExecutor(max_workers=4) as ex:
-                futs = []
-                for src, j in all_jobs:
-                    if src == "simplify":
-                        futs.append(ex.submit(score_job, j, "title", "company_name"))
-                    else:
-                        futs.append(ex.submit(score_job, j, "Title", "Company Name"))
-                for _ in as_completed(futs):
-                    pass
-            logger.info("✅ Resume scoring completed.")
-        else:
-            logger.info("Resume scoring skipped – missing API key or resume path.")
-        _set_progress(job_id, 85)
+        #     logger.info(f"Scoring {len(all_jobs)} new jobs in parallel…")
+        #     with ThreadPoolExecutor(max_workers=4) as ex:
+        #         futs = []
+        #         for src, j in all_jobs:
+        #             if src == "simplify":
+        #                 futs.append(ex.submit(score_job, j, "title", "company_name"))
+        #             else:
+        #                 futs.append(ex.submit(score_job, j, "Title", "Company Name"))
+        #         for _ in as_completed(futs):
+        #             pass
+        #     logger.info("✅ Resume scoring completed.")
+        # else:
+        #     logger.info("Resume scoring skipped – missing API key or resume path.")
+        # _set_progress(job_id, 85)
 
         # STEP 4 – Email summary
         html = "<div style='font-family:Arial;'>"
